@@ -14,6 +14,7 @@ The goal of the lab was to simulate real IT operations work: preparing hardware,
 - Access and validate ESXi through the web UI
 - Prepare Windows storage volumes using Disk Management
 - Reset and begin setup of a UniFi Dream Machine Pro
+- Draft a Linux-based Apache CloudStack management server install
 - Document troubleshooting and infrastructure setup steps
 
 ## Environment
@@ -25,6 +26,8 @@ The goal of the lab was to simulate real IT operations work: preparing hardware,
 | VMware ESXi 7.0.3 | Bare-metal hypervisor |
 | Windows Disk Management | Local disk validation and formatting |
 | UniFi Dream Machine Pro | Network gateway / security appliance setup |
+| Ubuntu Linux | CloudStack management server lab target |
+| MySQL Server | CloudStack management database |
 | Local LAN | Management access and device configuration |
 
 ## Lab Walkthrough
@@ -121,6 +124,97 @@ Observed details:
 
 ![UniFi / Saturday360 topology page](images/Screenshot%202025-08-18%20125537.png)
 
+### 7. Apache CloudStack Management Server Draft
+
+This section adds a Linux command plan for installing an Apache CloudStack management server in a lab environment. It is written as a draft runbook for Ubuntu 24.04 LTS or 22.04 LTS and follows the official Apache CloudStack management server installation flow: prepare the OS, install `cloudstack-management`, configure MySQL, initialize the CloudStack databases, and run the management setup.
+
+Reference: [Apache CloudStack Management Server Installation](https://docs.cloudstack.apache.org/en/latest/installguide/management-server/)
+
+#### Prepare the Linux host
+
+```bash
+sudo apt update
+sudo apt install -y chrony wget gnupg mysql-server
+
+hostname --fqdn
+ping -c 4 cloudstack.apache.org
+sudo systemctl enable --now chrony
+```
+
+#### Add the CloudStack package repository
+
+Use `noble` for Ubuntu 24.04 or `jammy` for Ubuntu 22.04.
+
+```bash
+echo "deb https://download.cloudstack.org/ubuntu noble 4.22" | sudo tee /etc/apt/sources.list.d/cloudstack.list
+wget -O - https://download.cloudstack.org/release.asc | sudo tee /etc/apt/trusted.gpg.d/cloudstack.asc
+sudo apt update
+```
+
+#### Install CloudStack management packages
+
+```bash
+sudo apt install -y cloudstack-management
+java -version
+```
+
+CloudStack 4.22 requires Java 17. The package install should handle Java dependencies, but checking `java -version` verifies the active runtime.
+
+#### Configure MySQL for CloudStack
+
+```bash
+sudo tee /etc/mysql/conf.d/cloudstack.cnf > /dev/null <<'EOF'
+[mysqld]
+server_id=source-01
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections=350
+log_bin=mysql-bin
+binlog_format=ROW
+EOF
+
+sudo systemctl restart mysql
+sudo systemctl status mysql --no-pager
+```
+
+#### Initialize the CloudStack database
+
+Replace the sample passwords and keys before using this in a real environment.
+
+```bash
+export CLOUDSTACK_DB_PASSWORD='ChangeMe-CloudDB!'
+export MYSQL_ROOT_PASSWORD='ChangeMe-RootDB!'
+export MANAGEMENT_IP='192.168.1.50'
+
+sudo cloudstack-setup-databases cloud:${CLOUDSTACK_DB_PASSWORD}@localhost \
+  --deploy-as=root:${MYSQL_ROOT_PASSWORD} \
+  -e file \
+  -m 'ChangeMe-ManagementKey' \
+  -k 'ChangeMe-DatabaseKey' \
+  -i ${MANAGEMENT_IP}
+```
+
+#### Start CloudStack management services
+
+```bash
+sudo cloudstack-setup-management
+sudo systemctl status cloudstack-management --no-pager
+```
+
+After setup, the CloudStack UI is typically reached from the management server on port `8080`.
+
+```text
+http://<management-server-ip>:8080/client
+```
+
+#### Lab validation checklist
+
+- Confirm the CloudStack management service is running
+- Confirm MySQL is running and listening locally
+- Confirm the CloudStack UI loads from the LAN
+- Confirm management ports are not exposed to the public internet
+- Record the management IP, hostname, OS version, and package version
+
 ## Skills Demonstrated
 
 - Bare-metal server preparation
@@ -130,9 +224,12 @@ Observed details:
 - IPv4 network configuration
 - Windows disk formatting and validation
 - Network appliance reset and setup
+- Linux package repository configuration
+- MySQL service configuration
+- CloudStack management server deployment planning
 - Infrastructure documentation
 - Troubleshooting during deployment
 
 ## Summary
 
-This lab demonstrates practical IT infrastructure work across storage, virtualization, networking, and endpoint administration. The screenshots show a realistic deployment process from hardware preparation through management access and device setup.
+This lab demonstrates practical IT infrastructure work across storage, virtualization, networking, endpoint administration, and cloud management planning. The screenshots show a realistic deployment process from hardware preparation through management access and device setup, while the CloudStack section adds a code-based Linux runbook for extending the lab into private cloud management.
