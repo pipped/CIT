@@ -16,6 +16,8 @@ The goal of the lab was to simulate real IT operations work: preparing hardware,
 - Reset and begin setup of a UniFi Dream Machine Pro
 - Document troubleshooting and infrastructure setup steps
 
+Additional extracted course lab notes are available in [course-labs](course-labs/).
+
 ## Environment
 
 | Component | Purpose |
