@@ -18,6 +18,8 @@ The goal of the lab was to simulate real IT operations work: preparing hardware,
 
 Additional extracted course lab notes are available in [course-labs](course-labs/).
 
+An Active Directory lab covering domain controller setup, OU structure, user management, and Group Policy is available in [active-directory-lab](active-directory-lab/).
+
 ## Environment
 
 | Component | Purpose |
