@@ -20,6 +20,8 @@ Additional extracted course lab notes are available in [course-labs](course-labs
 
 An Active Directory lab covering domain controller setup, OU structure, user management, and Group Policy is available in [active-directory-lab](active-directory-lab/).
 
+A penetration testing lab covering reconnaissance, scanning, enumeration, exploitation, and post-exploitation against an isolated vulnerable target is available in [pentest-lab](pentest-lab/).
+
 ## Environment
 
 | Component | Purpose |
